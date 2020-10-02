@@ -3,16 +3,11 @@ GEM
   specs:
     dotenv (2.7.6)
     jwt (2.2.2)
-    mail (2.7.1)
-      mini_mime (>= 0.1.1)
-    mini_mime (1.0.2)
     multi_json (1.15.0)
     mustermann (1.1.1)
       ruby2_keywords (~> 0.0.1)
     nexmo-jwt (0.1.1)
       jwt (~> 2)
-    pony (1.13.1)
-      mail (>= 2.0)
     rack (2.2.3)
     rack-protection (2.1.0)
       rack
@@ -41,7 +36,6 @@ PLATFORMS
 
 DEPENDENCIES
   dotenv
-  pony
   sinatra
   sinatra-contrib
   vonage

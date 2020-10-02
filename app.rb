@@ -5,15 +5,14 @@ require 'json'
 require 'vonage'
 require 'pony'
 
+require 'byebug'
+
 # CallerId App for getting details about a phone number.
 class CallerId < Sinatra::Base
   register Sinatra::Reloader
 
   configure do
-    $vonage = Vonage::Client.new(
-      api_key: ENV['VONAGE_API_KEY'],
-      api_secret: ENV['VONAGE_API_SECRET']
-    )
+    $vonage = Vonage::Client.new
   end
 
   get '/' do
@@ -21,57 +20,30 @@ class CallerId < Sinatra::Base
   end
 
   post '/lookup' do
-    @insight = $vonage.number_insight.advanced(number: params['phone'])
+    @insight = $vonage.number_insight.advanced_async(
+      number: params['phone'],
+      callback: "#{request.base_url}/nexmo_insights?response=#{params['response']}"
+    )
     erb :phone_lookup
   end
 
   post '/nexmo_insights' do
-    phone_info = request.body.read
+    phone_info = JSON.parse(request.body.read)
 
-    #print it out so we can view the response in the console
+    # Print it out so we can view the response in the console
     puts params
     puts phone_info
 
-    email_insight(phone_info, params[:email])
+    response = $vonage.sms.send(
+      from: ENV['VONAGE_SMS_FROM'],
+      to: params['response'],
+      text: "#{phone_info['status_message']}! #{phone_info['country_code']} #{phone_info['international_format_number']} (#{phone_info['valid_number']})"
+    )
+    puts response.http_response
 
-    #We need to return a 200 success code to Nexmo when the webhook hits our endpoint
-    #if we don't return a 200 success code, Nexmo will retry sending the result
     status 200
+  rescue Vonage::Error => e
+    puts e
   end
-
-   def email_insight(phone_info, email)
-     begin
-      	Pony.mail(
-      		:to => email,
-          :via => :smtp,
-          :via_options => {
-            :address              => "smtp.gmail.com",
-            :port                 => 587,
-            :user_name            => ENV['GMAIL_USERNAME'],
-            :password             => ENV['GMAIL_PASSWORD'],
-            :authentication       => 'plain',
-            :enable_starttls_auto => true
-          },
-      		:from => ENV['GMAIL_USERNAME'],
-      		:subject => "Nexmo insight for #{JSON.parse(phone_info)["national_format_number"]}",
-      		:headers => { 'Content-Type' => "text/html" },
-      		:body => to_html_string(phone_info))
-      rescue Exception => e
-      	puts e
-      end
-    end
-
-    def to_html_string(phone_info)
-      html = "<h1>Number Insight</h1>\n<table>"
-      JSON.parse(phone_info).each do |key, value|
-        html << %Q(
-          <tr>
-            <td> #{key.split("_").map(&:capitalize).join(' ')} </td>
-            <td> #{value} </td>
-          </tr>
-        )
-        end
-      html << "</table>"
-    end
-  run! if app_file == $0
+  run! if app_file == $PROGRAM_NAME
 end

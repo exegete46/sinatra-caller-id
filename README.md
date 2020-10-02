@@ -4,8 +4,7 @@ You'll need to set a few environment variables to a `.env` file, using `.env.exa
 
 - `VONAGE_API_KEY`
 - `VONAGE_API_SECRET`
-- `GMAIL_USERNAME`
-- `GMAIL_PASSWORD` - Don't worry, this is not transmitted anywhere.
+- `VONAGE_SMS_FROM` - A valid Vonage phone number to send from.
 
 If you're following along with the tutorial out check out the `start-here` branch
 
@@ -18,3 +17,5 @@ $ bundle install
 
 $ bundle exec ruby app.rb
 ```
+
+If you would like to see the SMS message generated after a successful async call, this application will need to be accessed via a public URL.  This is required for Vonage to call back into your service with a response.  Services such as [ngrok](https://ngrok.com) may help with this.
